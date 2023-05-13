@@ -1,0 +1,2706 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+    <http:listener-config name="cayenta-sys-api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081"/>
+    </http:listener-config>
+    <apikit:config name="cayenta-sys-api-config" api="api\cayenta-sys-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="ee25ad08-e8a0-4981-87b8-647e003920a1" >
+		<http:request-connection protocol="HTTPS" host="10.100.101.21" port="8843" >
+			<http:authentication >
+				<http:basic-authentication username="SA_Cayenta" password="smmBh87O5UOv6RX" />
+			</http:authentication>
+		</http:request-connection>
+	</http:request-config>
+	<flow name="cayenta-sys-api-main">
+        <http:listener config-ref="cayenta-sys-api-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <logger level="INFO" doc:name="start logger" doc:id="11432240-a814-4ea5-84d0-eae94a1283dd" message="####Listener Logger#####"/>
+		<apikit:router config-ref="cayenta-sys-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="cayenta-sys-api-console">
+        <http:listener config-ref="cayenta-sys-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="cayenta-sys-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="post:\addaccountcontract:application\json:cayenta-sys-api-config">
+        <logger level="INFO" doc:name="start Logger" doc:id="6d1747be-f95a-4578-ab94-19edcf41ee67" message="#####Before Request#####:#[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="c85aeac6-2b05-4853-9a7c-32cc100881fa" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request" doc:id="9833a1fe-cbb8-47c2-be51-f80fce740100" path="/cayentaws/service/API" config-ref="HTTP_Request_configuration">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Accept" : "application/xml",
+	"Content-Type" : "application/xml"
+}]]]></http:headers>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="a3f22356-cb4b-4d42-a30b-faeb411b826c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="end Logger" doc:id="103f4dcc-7edc-41c4-828f-fd767ca35491" message="#####Before Request#####:#[payload]"/>
+    </flow>
+    <flow name="post:\addaccountlocation:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    AddAccountLocation: {
+      Params: {
+        ACCOUNT_NO: "1000017",
+        PERSON_NO: "1000040",
+        LOCATION_NO: "3025032",
+        STATUS: "0",
+        STATUS_DESC: "Account created."
+      },
+      STATUS: "0"
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\addaccountperson:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    AddAccountPerson: {
+      Params: {
+        ACCOUNT_NO: 1000017,
+        PERSON_NO: 1027274,
+        STATUS: "0",
+        STATUS_DESC: "Account Person created."
+      },
+      STATUS: "0"
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\addaccountrelationship:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    AddAccountRelationship: {
+      Params: {
+        STATUS: 0
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\addaddressrecord:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    AddAddressRecord: {
+      Params: {
+        STATUS: 0,
+        ADDRESS_SEQ: 2
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\addalert:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    AddAlert: {
+      Params: {
+        STATUS: 0,
+        STATUS_DESC: "AUTOP Alert created for ACCT 2000021."
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\addbillableholdings:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    AddBillableHoldings: {
+      Params: {
+        STATUS: 0,
+        STATUS_DESC: "Billable Holdings, Store successful."
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\addcontact:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    AddContact: {
+      Params: {
+        STATUS: "0",
+        CONTACT_NO: "2251232",
+        STATUS_DESC: "ontact Created."
+      },
+      STATUS: "0"
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\adddeposit:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    AddDeposit: {
+      Params: {
+        DEPOSIT_SEQ: 1,
+        STATUS: 0,
+        STATUS_DESC: "Deposit/s is/are created."
+      },
+      STATUS: ""
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\addlocationservice:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    AddLocationService: {
+      Params: {
+        LOCATION_NO: 28053,
+        STATUS: 0,
+        STATUS_DESC: "The AddLocationService message completed successfully."
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\addmeterbillcode:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    AddMeterBillCode: {
+      Params: {
+        STATUS: 0,
+        STATUS_DESC: "Installed meter bill code created!"
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\addmovein:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    AddMoveIn: {
+      Params: {
+        ACCOUNT_NO: 1000017,
+        LOCATION_NO: 3000003,
+        SERVICE_SEQ: "",
+        TRANSACTION_NO: 18323,
+        STATUS: 0,
+        STATUS_DESC: "The AddMoveIn message completed successfully."
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\addperson:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    AddPerson: {
+      Params: {
+        PERSON_NO: 1000040,
+        STATUS: 0,
+        STATUS_DESC: "Person created."
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\addrequest:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    AddRequest: {
+      Params: {
+        STATUS: 0,
+        REQUEST_NO: 38189,
+        ACTION_NO: 38934
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\addservicebillcode:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    AddServiceBillCode: {
+      Params: {
+        STATUS: 0,
+        STATUS_DESC: "Bill code/s is/are created."
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\getaccount:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    GetAccount: {
+      Params: {
+        W_PENDING: "",
+        ACCOUNT_NO: 2000001,
+        ACCOUNT_NO_CUSTOM: 1000017,
+        ACCOUNT_NO_CUSTOM_2: 100001,
+        PERSON_NO: 1029688,
+        APPLICATION_NO: "",
+        CYCLE_CD: 18,
+        ELIG_TXROLLOVER_YN: "F",
+        CUSTOM_BILL_ID: "",
+        TITLE_CD: "",
+        PERSON_FNM: "GLENN",
+        PERSON_MNM: "",
+        PERSON_LNM: "STRUCK",
+        ADDR_SEQ_DFLT: 1,
+        ADDR_SEQ_OVRD: "",
+        CO_PHONE_SEQ: 1,
+        IN_CARE_OF_OVRD: "",
+        ENVELOPE_MEMO_OVRD: "",
+        ADDR_FUTURE_CHG_DT: "",
+        FUTURE_ADDR_SEQ: "",
+        FUTURE_INCAREOF: "",
+        FUTURE_ENVMEMO: "",
+        ACCOUNT_STAT: "INBIL",
+        ACCOUNT_STAT_START_DT: 19980829,
+        ACCOUNT_STAT_END_DT: "",
+        AVG_BILLING_YN: "F",
+        AVG_DFLT_AMT: "",
+        BILLING_STAT: "REGLR",
+        CLOSED_YN: "T",
+        OK_TO_BILL_YN: "F",
+        BILL_COPIES: "",
+        BILL_COUNT: 0,
+        ACCOUNT_CLASS_DFLT: "RES",
+        ALLOW_DAYS_LATE: "",
+        SELECT_CD: "",
+        OVERDUE_YN: "F",
+        LAST_BILL_DT: 20230131,
+        LAST_BILL_TM: "",
+        LAST_BILL_AMT: 83.63,
+        TAX_EXEMPT_YN: "F",
+        GENERIC_1: "U.OAHU",
+        GENERIC_2: "",
+        GENERIC_3: "",
+        CO_BYPASS_YN: "F",
+        INTEREST_EXEMPT_YN: "F",
+        BYPASS_END_DT: "",
+        FUTURE_CYCLE_CD: "",
+        FUTURE_CYCLE_DT: "",
+        CREDIT_SCORE: 0,
+        CREDIT_RATING_CD: "EXCEL",
+        CREDIT_EXPIRY_DT: 20230415,
+        LIEN_STATUS: "",
+        LIEN_AMT: "",
+        BYPASS_WRITE_OFF_YN: "F",
+        HOLD_WRITE_OFF_YN: "F",
+        LANGUAGE_CD: "ENG",
+        NO_BILL_START_DT: "",
+        NO_BILL_END_DT: "",
+        REBILL_AS_INSTBILL: "F",
+        WELFARE_AGENCY_YN: "F",
+        ATT_ON_HOLD_YN: "F",
+        ATT_ON_HOLD_END_DT: "",
+        BYPASS_WRTOF_END_DT: "",
+        REBILL_PENDING_YN: "F",
+        BILL_SORT_SEQ_CD: "",
+        MIN_BILL_AMT: "",
+        MIN_BILL_TAXABLE_YN: "F",
+        MIN_BILL_DISCOUNTABLE_YN: "F",
+        ARCHIVE_NO: "",
+        HIGH_BILL_AMT: "",
+        LOW_BILL_AMT: "",
+        BUDGET_BILL_TP: "",
+        FORCE_FINAL_YN: "F",
+        ACCOUNT_CMTS: "",
+        V_NAME: "",
+        V_AR_BALANCE_DUE: 0,
+        V_AR_BALANCE_NET: 0,
+        V_CREDIT_SCORE: 0,
+        V_AR_OVERDUE_AMT: 0,
+        V_CREDIT_RATING_CD: "EXCEL",
+        V_HAS_NSF_YN: "N",
+        V_PARSE_NAME: "",
+        SSN: "*******2223",
+        LICENSE_NO: "",
+        ACTIVE_PAYARR_YN: "F",
+        SUMMARY_BILL_YN: "F",
+        SUMMARY_BILL_TESTUL_MEU: "Asta e un test",
+        NEXT_CYCLE_METER_READ_DT: "",
+        STATUS: 0,
+        STATUS_DESC: "Account 2000001 found."
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\getaccountservicelocations:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    GetAccountServiceLocations: {
+      Params: {
+        STATUS: "0",
+        SERVICE_LOCATION: {
+          SERVICE_DESC: {
+            SERVICE_PURPOSE: "GA",
+            SERVICE_FDESC: "Non-Utility LPG Tank",
+            SERVICE_SDESC: "NU LPG Tank"
+          },
+          ACCOUNT_NO: 2000004,
+          LOCATION_NO: 3058739,
+          SERVICE_SEQ: 1,
+          EFFECTIVE_DT: "19980908",
+          CUTON_DT: "19980908",
+          CUTOFF_DT: "",
+          SERVICE_STAT: "CUTON",
+          SO_GENERATED_FROM: 89,
+          SC_TRXN_NO: 265,
+          SF_TRXN_NO: 3,
+          TX_FRCCUTON_FROM: 8787,
+          TX_FRCCUTOFF_FROM: 8,
+          CUTON_BILLED_YN: "T",
+          CUTOFF_BILLED_YN: "T",
+          ACCT_LOC_SERV_CMTS: "",
+          V_SAVE_CUTOFF_DT: "",
+          SERV_SEQ: 1,
+          SERV_IDENTIFIER: "",
+          SERVICE_TP: "NLPGT",
+          METERED_YN: "F",
+          SET_DT: "19980908",
+          PULL_DT: "",
+          SO_SET_FROM: 58,
+          SO_PULLED_FROM: 2,
+          SC_RESERVED_FROM: 1,
+          SF_RESERVED_FROM: 2,
+          ROUTE_NO_DFLT: 244100,
+          SORT_SEQ: 110,
+          BYPASS_BILL_YN: "F",
+          SERV_DISTRICT_CD: "",
+          BYPASS_MOVEIN_YN: "F",
+          SERV_CMTS: "LT",
+          V_UNEXP_CONS_YN: "",
+          V_PENDING_SO_YN: "F",
+          V_PENDING_ACTIONS: "",
+          V_NUM_METERS: 325,
+          V_SAVE_SET_DT: "19980908",
+          V_SAVE_PULL_DT: "",
+          V_SAVE_ROUTE_NO: "244100",
+          SERV_IDENTIFIER2: "",
+          LOCATION_ID_CUSTOM: "76197",
+          LOCATION_CLASS: "RES",
+          LOC_CLASS_CHG_DT: "",
+          FUTURE_LOC_CLASS: "",
+          LOCATION_STAT: "ACT",
+          SIC_CD: "814110",
+          DISTRICT_CD: "KAUAI",
+          NBR_OF_UNITS: 1,
+          APPRASAL_DISTRICT_NO: "",
+          BUILDING_NAME: "",
+          HOUSE_NO: "7271",
+          STREET_PFX_DIR: "",
+          STREET_NM: "AINA PONO",
+          STREET_NM_SFX: "ST",
+          STREET_SFX_DIR: "",
+          SEC_ADDR_ID: "",
+          SEC_ADDR_RANGE: "",
+          TER_ADDR_ID: "",
+          TER_ADDR_RANGE: "",
+          ADDR_ID_4: "",
+          ADDR_RANGE_4: "",
+          LOCATOR_ID: "",
+          CITY: "KAPAA",
+          PROVINCE_CD: "HI",
+          POSTAL_CODE: "96746",
+          LIS_CD: "",
+          LIS_NO: "",
+          LIS_VALIDAT_STAT: "25",
+          SC_OLD_LOC_CLASS: "",
+          SC_NEW_LOC_CLASS: "",
+          SC_CLASS_CHG_DT: "",
+          SC_CLASS_CHG_FROM: 123,
+          SELECT_CD: "",
+          GENERIC_1: "746R",
+          GENERIC_2: "410",
+          GENERIC_3: "332993",
+          GENERIC_CD_1: "NU",
+          GENERIC_CD_2: "",
+          GENERIC_CD_3: "",
+          SPECIAL_DIRECTIONS: "WAIL RI, Wailua Hmstd",
+          ASSET_AREA: "UM",
+          ASSET_TYPE: "LO",
+          ASSET_NO: "3058739",
+          WARD_NO: "",
+          TAX_ROLL_NO: "",
+          PARCEL_ID: "",
+          HOUSE_NO_SEQ: "O",
+          INVALID_ADDRESS_YN: "F",
+          SOURCE_CD: "",
+          SOURCE_ID: "",
+          LOCATION_CMTS: "",
+          V_SADDRESS: "",
+          INSTALLED_BILL_CD: "MTANK"
+        }
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\getaddressrecords:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    GetAddressRecords: {
+      Params: {
+        STATUS: 0,
+        ADDRESS_COUNT: 1,
+        ADDRESS: {
+          ADDRESS_SEQ: 1,
+          ACTIVE_DT: 19730101,
+          INACTIVE_DT: "",
+          SEASON_STR_MTH: "",
+          SEASON_STR_DAY: "",
+          SEASON_END_MTH: "",
+          SEASON_END_DAY: "",
+          ADDRESS_CD: "FWD",
+          HOUSE_NO: "",
+          STREET_PFX_DIR: "",
+          STREET_NM: "3633 WAIALAE AVE BLDG C210",
+          STREET_NM_SFX: "",
+          STREET_SFX_DIR: "",
+          SEC_ADDR_ID: "",
+          SEC_ADDR_RANGE: "",
+          TER_ADDR_ID: "",
+          TER_ADDR_RANGE: "",
+          ROUTE_PFX: "",
+          ADDR_ROUTE: "",
+          CITY: "HONOLULU",
+          PROVINCE_CD: "HI",
+          POSTAL_CD: 96816,
+          PO_BOX_NO: "",
+          DELIVERY_INST_TP: "",
+          DELIVERY_INST_NM: "",
+          COUNTRY_CD: "",
+          IN_CARE_OF: "DOE State of HI-OFO Auxiliary Svcs",
+          ENVELOPE_MEMO: "",
+          DEFAULT_YN: "T",
+          LIS_CD: "",
+          LIS_NO: "",
+          LIS_VALIDAT_STAT: "",
+          PRIMARY_LOCATION_YN: "",
+          ADDR_ID_4: "",
+          ADDR_RANGE_4: "",
+          LOCATOR_ID: "",
+          ADDRESS_CMTS: "",
+          PERSON_ADDRESS_YN: "T",
+          ACCOUNT: {
+            ACCOUNT_NO: 2100119
+          }
+        }
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\getalert:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    GetAlert: {
+      Params: {
+        ALERT_DATA: {
+          ALERT: {
+            OWNERSHIP_CD: "ACCT",
+            ALERT_KEY: 2000001,
+            ADDRESSEE_CD: "ALL",
+            ALERT_CD: "AUTOP",
+            ALERT_FDESC: "Autopay Customer",
+            START_DT: 20221017100934,
+            END_DT: "",
+            ALERT_CMTS: "",
+            ALERT_PRIORITY_NO: ""
+          }
+        },
+        STATUS: 0,
+        STATUS_DESC: "Alert found for ACCT 2000001"
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\getavgconsumption:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    GetAvgConsumption: {
+      Params: {
+        AvgConsumption: {
+          ACCOUNT_NO: 2000000,
+          LOCATION_NO: 3000003,
+          SERVICE_SEQ: 1,
+          METER_SEQ: 1,
+          YEAR: 2023,
+          CALC_TP: "",
+          AVG_CONS: 25,
+          AVG_PER_DAY: 5,
+          AVG_PERIOD: 5,
+          STATUS: ""
+        }
+      }
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\getbilldates:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    GetBillDates: {
+      Params: {
+        STATUS: 0,
+        BILLS: {
+          BILL: [
+            {
+              BILL_RUN_DT: "20230116",
+              BILL_RUN_TM: "190004",
+              INVOICE_NO: "203051",
+              BILL_TP: "REGLR",
+              BILL_DT: "20230116",
+              POSTING_DT: "20230116",
+              GL_YEAR: "2023",
+              GL_PERIOD: 1,
+              PERIOD_FROM_DT: "20221206",
+              PERIOD_TO_DT: "20230105",
+              BILLING_DAYS: 31
+            }, 
+            {
+              BILL_RUN_DT: "20221212",
+              BILL_RUN_TM: "190004",
+              INVOICE_NO: "125616",
+              BILL_TP: "REGLR",
+              BILL_DT: "20221212",
+              POSTING_DT: "20221212",
+              GL_YEAR: "2022",
+              GL_PERIOD: 12,
+              PERIOD_FROM_DT: "20221104",
+              PERIOD_TO_DT: "20221205",
+              BILLING_DAYS: 32
+            }, 
+            {
+              BILL_RUN_DT: "20221116",
+              BILL_RUN_TM: "190004",
+              INVOICE_NO: "59023",
+              BILL_TP: "REGLR",
+              BILL_DT: "20221116",
+              POSTING_DT: "20221116",
+              GL_YEAR: "2022",
+              GL_PERIOD: 11,
+              PERIOD_FROM_DT: "20221005",
+              PERIOD_TO_DT: "20221103",
+              BILLING_DAYS: 30
+            }, 
+            {
+              BILL_RUN_DT: "20221011",
+              BILL_RUN_TM: "120010",
+              INVOICE_NO: "83322736",
+              BILL_TP: "REGLR",
+              BILL_DT: "20221011",
+              POSTING_DT: "",
+              GL_YEAR: "20",
+              GL_PERIOD: 10,
+              PERIOD_FROM_DT: "20220907",
+              PERIOD_TO_DT: "20221004",
+              BILLING_DAYS: 27
+            }
+          ]
+        }
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\getbilldetails:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    GetBillDetails: {
+      Params: {
+        STATUS: 0,
+        BILL: {
+          ACCOUNT_NO: 2000000,
+          BILL_RUN_DT: "20221116",
+          BILL_RUN_TM: "131748",
+          BILL_SEQ_NO: 1210,
+          INVOICE_NO: "",
+          BILL_TP: "REGLR",
+          BILL_DT: "20221116",
+          POSTING_DT: "20221116",
+          BILL_DUE_DT: "20221201",
+          PERIOD_FROM_DT: "20221005",
+          PERIOD_TO_DT: "20221103",
+          GL_YEAR: "2022",
+          GL_PERIOD: 11,
+          BILLING_DAYS: 30,
+          TITLE_CODE: "",
+          FIRST_NM: "PETER",
+          MIDDLE_NM: "",
+          LAST_NM: "KATSIKAS",
+          PHONE_NO: "",
+          BUILDING_NAME: "",
+          HOUSE_NO: "",
+          STREET_PFX_DIR: "",
+          STREET_NM: "5621 KANAU ST",
+          STREET_NM_SFX: "",
+          STREET_SFX_DIR: "",
+          SEC_ADDR_ID: "",
+          SEC_ADDR_RANGE: "",
+          TER_ADDR_ID: "",
+          TER_ADDR_RANGE: "",
+          CITY: "HONOLULU",
+          STATE: "HI",
+          ZIP: "96821",
+          DELIVERY_INST_TP: "",
+          DELIVERY_INST_NM: "",
+          COUNTRY_CD: "US",
+          PO_BOX_NO: "",
+          ROUTE_PFX: "",
+          ADDR_ROUTE: "",
+          IN_CARE_OF: "",
+          ENVELOPE_MEMO: "",
+          PREV_BILL_AMT: 45.74,
+          BUDGET_BILL_AMT: 46,
+          FACTOR_AMT1: 5,
+          DOLLAR_AMT1: 6,
+          AR_DUE_BEFORE_BILL: 0,
+          AR_UNAPPLIED_CR_BEFORE_BILL: 15,
+          AR_DUE_AFTER_BILL: 53.56,
+          AR_UNAPPLIED_CR_AFTER_BILL: 12,
+          AR_NET_AFTER_BILL: 53.56,
+          PENALTY_AMT: 0.54,
+          BUDGET_DISC_AMT: 56,
+          NON_BILL_GENERATED_CHGS: 0,
+          TOTAL_PAYMENTS: -45.74,
+          BILL_GENERATED_CHGS: 53.56,
+          DISCOUNTED_AMT: 85,
+          DISCOUNT_AMT: 6,
+          DISCOUNT_END_DT: "",
+          DISCOUNT_APPLIED_YN: "",
+          BANK_DRAFT_YN: "F",
+          FINAL_YN: "F",
+          CORRECTED_BILL_YN: "F",
+          VOIDED_YN: "F",
+          CANCELED_BILL_YN: "F",
+          REBILL_BILL_YN: "F",
+          OFF_CYCLE_YN: "F",
+          BILL_IS_CORRECTED_YN: "F",
+          DETAILS: {
+            COUNT: 3,
+            DETAIL: [
+              {
+                LOCATION_NO: 0,
+                SERVICE_SEQ: 0,
+                DETAIL_TP: "1",
+                DETAIL_SEQ: 3,
+                DETAIL_CD: "ICAUTOACH",
+                ITEM_NO: 632916,
+                REPORT_CONTEXT: "",
+                DETAIL_DT: "20221026",
+                SUB_PERIOD_SEQ: 0,
+                PERIOD_FROM_DT: "",
+                PERIOD_TO_DT: "",
+                BILLING_DAYS: 29,
+                DETAIL_AMT: -45.74,
+                TAXABLE_AMT: 5,
+                BUDGET_BILL_AMT: 8,
+                BUDGET_BILL_DISC_AMT: 99,
+                DETAIL_DISC_AMT: 36,
+                METER_SEQ: 1,
+                METER_SERIAL_NO: "",
+                READ_FROM: 0,
+                READ_TO: 2,
+                ACTUAL_CONS_AMT: 58,
+                CONS_AMT: 45,
+                BILLED_DEMAND: "",
+                MULTIPLIER_1: 2,
+                MULTIPLIER_2: 1,
+                DISCOUNTED_YN: "F",
+                BILL_GENERATED_YN: "F",
+                PRORATE_YN: "F",
+                METER_CHG_OUT_YN: "F",
+                MULTIPLE_DIAL_METER_YN: "F",
+                LINKED_BILLING_YN: "F",
+                RETAIL_CHARGE_YN: "",
+                BILLED_PER_CONTRACT_YN: "F",
+                LOAD_FACTOR: 1,
+                POWER_FACTOR: 2,
+                SIC_CD: ""
+              }, 
+              {
+                LOCATION_NO: 3025032,
+                SERVICE_SEQ: 1,
+                DETAIL_TP: "2",
+                DETAIL_SEQ: 1,
+                DETAIL_CD: "20",
+                ITEM_NO: 0,
+                REPORT_CONTEXT: "",
+                DETAIL_DT: "20221103",
+                SUB_PERIOD_SEQ: 0,
+                PERIOD_FROM_DT: "20221005",
+                PERIOD_TO_DT: "20221103",
+                BILLING_DAYS: 30,
+                DETAIL_AMT: 53.56,
+                TAXABLE_AMT: 0,
+                BUDGET_BILL_AMT: 12,
+                BUDGET_BILL_DISC_AMT: 21,
+                DETAIL_DISC_AMT: 0,
+                METER_SEQ: 1,
+                METER_SERIAL_NO: "154915",
+                READ_FROM: 0,
+                READ_TO: 0,
+                ACTUAL_CONS_AMT: 23,
+                CONS_AMT: 6.766933,
+                BILLED_DEMAND: "",
+                MULTIPLIER_1: 3,
+                MULTIPLIER_2: 2,
+                DISCOUNTED_YN: "F",
+                BILL_GENERATED_YN: "T",
+                PRORATE_YN: "F",
+                METER_CHG_OUT_YN: "F",
+                MULTIPLE_DIAL_METER_YN: "F",
+                LINKED_BILLING_YN: "F",
+                RETAIL_CHARGE_YN: "F",
+                BILLED_PER_CONTRACT_YN: "F",
+                LOAD_FACTOR: 0,
+                POWER_FACTOR: 3,
+                SIC_CD: "",
+                BILL_CD_DETAILS: [
+                  {
+                    COUNT: 5
+                  }, 
+                  {
+                    BILL_CD_DETAIL: {
+                      BILL_CD: "20",
+                      BC_DETAIL_TP: 1,
+                      BC_DETAIL_SEQ: 1,
+                      CODE_1: "20C",
+                      CODE_2: "",
+                      CODE_3: "",
+                      CODE_4: "",
+                      LEVEL_FROM: 0,
+                      LEVEL_TO: 99999999,
+                      CONS_LEVEL_AMT: 6.77,
+                      BC_DETAIL_RATE: 4.33598,
+                      BC_DETAIL_AMT: 29.35,
+                      BC_DETAIL_PRORATED_YN: "F",
+                      NUM_1: 0,
+                      NUM_2: 0,
+                      NUM_3: 0,
+                      NUM_4: 0,
+                      NUM_5: 0,
+                      BC_ACTIVE_DAYS: 25,
+                      BC_STANDARD_DAYS: 29,
+                      FROM_DT: "20221005",
+                      TO_DT: "20221103",
+                      ITEM_NO: 0,
+                      QUANTITY_SEQ: 1,
+                      REPORT_CONTEXT: "UCON",
+                      REPORT_SUB_CONTEXT: ""
+                    }
+                  }, 
+                  {
+                    BILL_CD_DETAIL: {
+                      BILL_CD: "20",
+                      BC_DETAIL_TP: 3,
+                      BC_DETAIL_SEQ: 2,
+                      CODE_1: "URES",
+                      CODE_2: "",
+                      CODE_3: "",
+                      CODE_4: "",
+                      LEVEL_FROM: 0,
+                      LEVEL_TO: 0,
+                      CONS_LEVEL_AMT: 23,
+                      BC_DETAIL_RATE: 9.6,
+                      BC_DETAIL_AMT: 9.6,
+                      BC_DETAIL_PRORATED_YN: "F",
+                      NUM_1: 0,
+                      NUM_2: 0,
+                      NUM_3: 0,
+                      NUM_4: 0,
+                      NUM_5: 0,
+                      BC_ACTIVE_DAYS: 30,
+                      BC_STANDARD_DAYS: 29,
+                      FROM_DT: "20221005",
+                      TO_DT: "20221103",
+                      ITEM_NO: 0,
+                      QUANTITY_SEQ: 0,
+                      REPORT_CONTEXT: "UBAS",
+                      REPORT_SUB_CONTEXT: ""
+                    }
+                  }
+                ]
+              }, 
+              {
+                LOCATION_NO: 3025032,
+                SERVICE_SEQ: 1,
+                DETAIL_TP: "2",
+                DETAIL_SEQ: 2,
+                DETAIL_CD: "UCUSA",
+                ITEM_NO: 0,
+                REPORT_CONTEXT: "",
+                DETAIL_DT: "20221103",
+                SUB_PERIOD_SEQ: 0,
+                PERIOD_FROM_DT: "20221005",
+                PERIOD_TO_DT: "20221103",
+                BILLING_DAYS: 30,
+                DETAIL_AMT: 0,
+                TAXABLE_AMT: 0,
+                BUDGET_BILL_AMT: 0,
+                BUDGET_BILL_DISC_AMT: 0,
+                DETAIL_DISC_AMT: 0,
+                METER_SEQ: 1,
+                METER_SERIAL_NO: "154915",
+                READ_FROM: 0,
+                READ_TO: 0,
+                ACTUAL_CONS_AMT: 0,
+                CONS_AMT: 6.766933,
+                BILLED_DEMAND: "",
+                MULTIPLIER_1: 1,
+                MULTIPLIER_2: 1,
+                DISCOUNTED_YN: "F",
+                BILL_GENERATED_YN: "T",
+                PRORATE_YN: "F",
+                METER_CHG_OUT_YN: "F",
+                MULTIPLE_DIAL_METER_YN: "F",
+                LINKED_BILLING_YN: "F",
+                RETAIL_CHARGE_YN: "F",
+                BILLED_PER_CONTRACT_YN: "F",
+                LOAD_FACTOR: 0,
+                POWER_FACTOR: 1,
+                SIC_CD: "",
+                BILL_CD_DETAILS: [
+                  {
+                    COUNT: 1
+                  }, 
+                  {
+                    BILL_CD_DETAIL: {
+                      BILL_CD: "UCUSA",
+                      BC_DETAIL_TP: 4,
+                      BC_DETAIL_SEQ: 1,
+                      CODE_1: "C40",
+                      CODE_2: "",
+                      CODE_3: "",
+                      CODE_4: "",
+                      LEVEL_FROM: 0,
+                      LEVEL_TO: 0,
+                      CONS_LEVEL_AMT: 0,
+                      BC_DETAIL_RATE: 0,
+                      BC_DETAIL_AMT: 0,
+                      BC_DETAIL_PRORATED_YN: "F",
+                      NUM_1: 0,
+                      NUM_2: 0,
+                      NUM_3: 0,
+                      NUM_4: 0,
+                      NUM_5: 1,
+                      BC_ACTIVE_DAYS: 26,
+                      BC_STANDARD_DAYS: 30,
+                      FROM_DT: "20221005",
+                      TO_DT: "20221103",
+                      ITEM_NO: 0,
+                      QUANTITY_SEQ: 0,
+                      REPORT_CONTEXT: "UCUSAPP",
+                      REPORT_SUB_CONTEXT: ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\getbillableholdings:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    GetBillableHoldings: {
+      Params: {
+        STATUS: "",
+        BILLABLE_HOLDING: {
+          LOCATION_NO: 3000045,
+          SERVICE_SEQ: 1,
+          SERVICE_TP: "NKEYM",
+          SERVICE_DESCRIPTION: "",
+          ASSET_TP: "",
+          ASSET_DESCRIPTION: "",
+          CONFIG_CD: "",
+          CONFIG_DESCRIPTION: "",
+          SEQ_NO: "",
+          EFFECTIVE_DT: "",
+          END_DT: "",
+          GENERIC_1: "",
+          GENERIC_2: "",
+          GENERIC_3: "",
+          GENERIC_4: "",
+          GENERIC_5: "",
+          GENERIC_6: "",
+          GENERIC_7: "",
+          GENERIC_8: "",
+          GENERIC_9: "",
+          GENERIC_10: "",
+          COUNT: "",
+          SIC_CD: "",
+          AREA_SERVED: "",
+          COMMENTS: "",
+          STOP_BILL_DT: 2061993,
+          START_BILL_DT: 2052003
+        }
+      },
+      STATUS: ""
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\getconsumptionhistory:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    GetConsumptionHistory: {
+      Params: {
+        INSTALLED_METER: {
+          B_LINE3: "",
+          METER_NO: 145845,
+          SET_DT: 20170119,
+          PULL_DT: "",
+          SERIAL_NO: 146704,
+          METER_TP: "G_4_100",
+          W_AVG_CALC_DT: "",
+          LOCATION_NO: 3000003,
+          METER_SEQ: 1,
+          EFFECTIVE_DT: 20190329,
+          SERV_SEQ: 1,
+          ACCOUNT_NO: 2059571,
+          ROUTE_NO: 110105,
+          ROUTE_SEQ: 2660,
+          TX_CREATED_FROM: "",
+          SEQ_SET_DT: "",
+          MULTIPLIER: 1.012115,
+          V_PENDING_SO_YN: "",
+          V_PENDING_ACTIONS: "",
+          AVG_CALC_TP: "",
+          AVG_AMT: "",
+          CONS_HIST: ""
+        }
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\getinstalledservices:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    GetInstalledServices: {
+      Params: {
+        INSTALLED_SERVICE: {
+          LOCATION_NO: 3000003,
+          SERV_SEQ: 1,
+          SERVICE_TP: "UGASM",
+          SERVICE_PURPOSE: "GA",
+          SERVICE_FDESC: "Utility SNG-LPG Metered",
+          SERVICE_SDESC: "UT SNG-LPG Mtr",
+          SERV_IDENTIFIER: "",
+          SERV_IDENTIFIER2: "",
+          ADDRESS: "1722 10TH AVE A",
+          METERED_YN: "T",
+          SET_DT: 20170119,
+          PULL_DT: "",
+          SO_SET_FROM: "",
+          SO_PULLED_FROM: "",
+          SC_RESERVED_FROM: "",
+          SF_RESERVED_FROM: "",
+          ROUTE_NO_DFLT: 110105,
+          SORT_SEQ: 110,
+          BYPASS_BILL_YN: "F",
+          SERV_DISTRICT_CD: "",
+          BYPASS_MOVEIN_YN: "F",
+          SERV_CMTS: "US",
+          A_GEOLAT: 21.292167009,
+          A_GEOLONG: -157.796804019
+        },
+        STATUS: 0
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\getlocation:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    GetLocation: {
+      Params: {
+        LOCATION: {
+          W_SITE_EXTENSION: "",
+          W_SITE_PHONE: "",
+          V_SADDRESS: "1722 10TH AVE #A",
+          A_GEOLAT: 21.292167009,
+          A_GEOLONG: -157.796804019,
+          LOCATION_NO: 3000003,
+          LOCATION_ID_CUSTOM: "1000",
+          LOCATION_CLASS: "RES",
+          LOC_CLASS_CHG_DT: "",
+          FUTURE_LOC_CLASS: "",
+          LOCATION_STAT: "ACT",
+          SIC_CD: "814110",
+          DISTRICT_CD: "OAHU",
+          NBR_OF_UNITS: 1,
+          APPRASAL_DISTRICT_NO: "",
+          BUILDING_NAME: "",
+          HOUSE_NO: 1722,
+          STREET_PFX_DIR: "",
+          STREET_NM: "10TH",
+          STREET_NM_SFX: "AVE",
+          STREET_SFX_DIR: "",
+          SEC_ADDR_ID: "",
+          SEC_ADDR_RANGE: "#A",
+          TER_ADDR_ID: "",
+          TER_ADDR_RANGE: "",
+          ADDR_ID_4: "",
+          ADDR_RANGE_4: "",
+          LOCATOR_ID: "",
+          CITY: "HONOLULU",
+          PROVINCE_CD: "HI",
+          POSTAL_CODE: 96816,
+          LIS_CD: "",
+          LIS_NO: "",
+          LIS_VALIDAT_STAT: 20,
+          SC_OLD_LOC_CLASS: "",
+          SC_NEW_LOC_CLASS: "",
+          SC_CLASS_CHG_DT: "",
+          SC_CLASS_CHG_FROM: "",
+          SELECT_CD: "",
+          GENERIC_1: "816R",
+          GENERIC_2: 2660,
+          GENERIC_3: "",
+          GENERIC_CD_1: "U",
+          GENERIC_CD_2: "USNG",
+          GENERIC_CD_3: "DFLT",
+          SPECIAL_DIRECTIONS: "",
+          ASSET_AREA: "UM",
+          ASSET_TYPE: "LO",
+          ASSET_NO: 3000003,
+          WARD_NO: "",
+          TAX_ROLL_NO: "",
+          PARCEL_ID: "",
+          HOUSE_NO_SEQ: "",
+          INVALID_ADDRESS_YN: "",
+          SOURCE_CD: "",
+          SOURCE_ID: "",
+          LOCATION_CMTS: "",
+          STATUS: 0
+        }
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\getmeterbillcode:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    GetMeterBillCode: {
+      Params: {
+        LOCATION_NO: 3000003,
+        BILL_CODES: {
+          METER_BILL_CODE: {
+            ACCOUNT_NO: 2059571,
+            LOCATION_NO: 3000003,
+            SERVICE_SEQ: 1,
+            METER_SEQ: 1,
+            BILL_CD: 20,
+            ACTIVE_DT: 20190329,
+            INACTIVE_DT: "",
+            MBC_MULTIPLIER: "",
+            TAX_OVERRIDE_CD: "",
+            VOIDED_YN: "F",
+            METER_BILL_CD_CMTS: "",
+            BILL_CD_ACTIVE_DT: 20100101,
+            BILL_CD_INACTIVE_DT: "",
+            BILL_CD_FDESC: "Oahu - Utility Residential Service",
+            BILL_CD_SDESC: "UT Oahu RES",
+            ACTIVE_MTH_START: "",
+            ACTIVE_DAY_START: "",
+            ACTIVE_MTH_END: "",
+            ACTIVE_DAY_END: "",
+            BILL_CD_DISCOUNTABLE_YN: "F",
+            BILL_CD_TAXABLE_YN: "F",
+            BILL_PRINT_CD: "",
+            BASE_RATE_CD: "URES",
+            CONS_RATE_CD: "20C",
+            DEM_READ_CALC_TP: "",
+            UNIT_CALC_FACTOR: "",
+            UNIT_CALC_FACTOR_PRF_YN: "F",
+            MIN_CHG: "",
+            MIN_BASE_YN: "F",
+            MIN_CONS_YN: "F",
+            MIN_DEMAND_YN: "F",
+            MIN_FINAL_ONLY_YN: "F",
+            MAX_CHG: "",
+            MAX_BASE_YN: "F",
+            MAX_CONS_YN: "F",
+            MAX_DEMAND_YN: "F",
+            MIN_CHARGE_MODE: "",
+            AR_ITEM_TP: "UOAGASRES",
+            AR_CAT_CD: "",
+            AR_SUM_CD: "",
+            AR_MAP_CD: "",
+            CAR_FWD_AR_ITEM_TP: "",
+            CAR_FWD_AR_CAT_CD: "",
+            CAR_FWD_AR_SUM_CD: "",
+            CAR_FWD_AR_MAP_CD: "",
+            STANDARD_DAYS_OVRD: "",
+            FACTOR_CD: "",
+            FINAL_BILL_BASE_YN: "T",
+            CONS_BLOCK_YN: "F",
+            KVAR_READ_CALC_TP: "",
+            MIN_KVAR_YN: "F",
+            MAX_KVAR_YN: "F",
+            BASE_C14_YN: "T",
+            CONS_C14_YN: "T",
+            KVAR_C14_YN: "F",
+            DMND_C14_YN: "F",
+            TOU_CLASS_CD: "",
+            BASE_TAXABLE_YN: "F",
+            CONS_TAXABLE_YN: "F",
+            DEM_TAXABLE_YN: "F",
+            KVAR_TAXABLE_YN: "F",
+            BILL_CD_TAX_BUCKET: "",
+            BASE_TAX_BUCKET: "",
+            CONS_TAX_BUCKET: "",
+            DEM_TAX_BUCKET: "",
+            KVAR_TAX_BUCKET: "",
+            REFERENCE_ONLY_YN: "F",
+            WEIGHTED_AVG_YN: "F",
+            RETAIL_CHARGE_YN: "F",
+            PF_ADJUST_YN: "F",
+            BASE_DISC_CAP_YN: "F",
+            CONS_DISC_CAP_YN: "F",
+            DMND_DISC_CAP_YN: "F",
+            KVAR_DISC_CAP_YN: "",
+            BASE_NONZERO_CONS_YN: "F",
+            CONS_CONTEXT: "",
+            DEM_CONTEXT: "",
+            KVAR_CONTEXT: "",
+            LF_CONTEXT: "",
+            PF_CONTEXT: "",
+            HIGH_AMT: "",
+            LOW_AMT: "",
+            RATCHET_CD: "",
+            CONS_REPORT_CONTEXT: "UCON",
+            BASE_REPORT_CONTEXT: "UBAS",
+            DEM_REPORT_CONTEXT: "",
+            KVAR_REPORT_CONTEXT: "",
+            MIN_CHG_REPORT_CONTEXT: "",
+            FOR_PREPAY_YN: "F",
+            GENERIC1_YN: "F",
+            GENERIC2_YN: "F",
+            GENERIC3_YN: "F",
+            BILL_CD_CMTS: "",
+            BILL_CODE_CHARGE_MODE: [
+              {
+                CHARGE_MODE: "C08",
+                CHARGE_MODE_SEQ: 1,
+                CHARGE_MODE_TP: "",
+                CM_DESC: "Fuel Cost Adjustment",
+                CM_FIXED_CHARGE: "",
+                CM_FIXED_CONS: "",
+                CM_MIN_CONS: "",
+                CM_MAX_CONS: "",
+                CM_FACTOR: "",
+                CM_FACTOR_PREF_CD: "",
+                CM_BASE_RATE_CD: "",
+                CM_CONS_RATE_CD: "FACOA",
+                CM_SERV_TP: "UGASM",
+                CM_BASE_CHARGE_YN: "F",
+                CM_CONS_CHARGE_YN: "F",
+                CM_DEMAND_CHARGE_YN: "F",
+                CM_DISCOUNTABLE_YN: "F",
+                CM_TAXABLE_YN: "F",
+                CM_TAX_BUCKET: "",
+                CM_ONE_TIME_CHG_YN: "F",
+                CM_PRORATEABLE_YN: "F",
+                CM_ASSET_TP: "",
+                CM_BILL_CD: "",
+                CM_SURCHARGE_TP: "",
+                VOIDED_YN: "F",
+                FACTOR_CD: "",
+                CM_FINAL_BILL_YN: "T",
+                CM_DEM_READ_CALC_TP: "",
+                CM_MIN_CHG_YN: "F",
+                CM_MAX_CHG_YN: "F",
+                CM_AR_ITEM_TP: "",
+                CM_AR_CAT_CD: "",
+                CM_AR_SUM_CD: "",
+                CM_AR_MAP_CD: "",
+                CM_REFUND_ONLY_YN: "F",
+                CM_EQUATION: "",
+                CM_C14_CHARGE_YN: "F",
+                CM_LINK_SEQ: "",
+                CM_OPERATION_SEQ: 10,
+                CM_ASSET_INSTALLED_YN: "F",
+                CM_ASSET_ATTRIBUTE: "",
+                CM_ASSET_VALUE: "",
+                CM_METER_DISTINCT_YN: "F",
+                CM_PRIMARY_BASE_YN: "F",
+                CM_DISC_CAP_YN: "F",
+                CM_APPLY_CAP_YN: "F",
+                CM_BC_MIN_CHG_SRC_YN: "F",
+                CM_CONTEXT: "",
+                REPORT_CONTEXT: "UFCA",
+                CM_BASE_RPT_CTXT: "",
+                CM_CONS_RPT_CTXT: "",
+                CM_DEM_RPT_CTXT: "",
+                CM_KVAR_RPT_CTXT: "",
+                CM_GENERIC1_YN: "F",
+                CM_GENERIC2_YN: "F",
+                CM_GENERIC3_YN: "F",
+                FROM_DT: "",
+                TO_DT: "",
+                CM_CMTS: ""
+              }, 
+              {
+                CHARGE_MODE: "C40",
+                CHARGE_MODE_SEQ: 1,
+                CHARGE_MODE_TP: "",
+                CM_DESC: "Employee Discount",
+                CM_FIXED_CHARGE: "",
+                CM_FIXED_CONS: "",
+                CM_MIN_CONS: "",
+                CM_MAX_CONS: "",
+                CM_FACTOR: "",
+                CM_FACTOR_PREF_CD: "",
+                CM_BASE_RATE_CD: "",
+                CM_CONS_RATE_CD: "",
+                CM_SERV_TP: "",
+                CM_BASE_CHARGE_YN: "F",
+                CM_CONS_CHARGE_YN: "F",
+                CM_DEMAND_CHARGE_YN: "F",
+                CM_DISCOUNTABLE_YN: "F",
+                CM_TAXABLE_YN: "T",
+                CM_TAX_BUCKET: "",
+                CM_ONE_TIME_CHG_YN: "F",
+                CM_PRORATEABLE_YN: "F",
+                CM_ASSET_TP: "",
+                CM_BILL_CD: "",
+                CM_SURCHARGE_TP: "",
+                VOIDED_YN: "F",
+                FACTOR_CD: "",
+                CM_FINAL_BILL_YN: "T",
+                CM_DEM_READ_CALC_TP: "",
+                CM_MIN_CHG_YN: "F",
+                CM_MAX_CHG_YN: "F",
+                CM_AR_ITEM_TP: "",
+                CM_AR_CAT_CD: "",
+                CM_AR_SUM_CD: "",
+                CM_AR_MAP_CD: "",
+                CM_REFUND_ONLY_YN: "F",
+                CM_EQUATION: "TEST(IF(acct(EMPLY)=const(T)),TRUE(sumbd(URES-B,20C-C,C08-1)*factor(EMPLY)),FALSE(const(0)))",
+                CM_C14_CHARGE_YN: "F",
+                CM_LINK_SEQ: "",
+                CM_OPERATION_SEQ: 20,
+                CM_ASSET_INSTALLED_YN: "F",
+                CM_ASSET_ATTRIBUTE: "",
+                CM_ASSET_VALUE: "",
+                CM_METER_DISTINCT_YN: "F",
+                CM_PRIMARY_BASE_YN: "F",
+                CM_DISC_CAP_YN: "F",
+                CM_APPLY_CAP_YN: "F",
+                CM_BC_MIN_CHG_SRC_YN: "F",
+                CM_CONTEXT: "",
+                REPORT_CONTEXT: "EMPDS",
+                CM_BASE_RPT_CTXT: "",
+                CM_CONS_RPT_CTXT: "",
+                CM_DEM_RPT_CTXT: "",
+                CM_KVAR_RPT_CTXT: "",
+                CM_GENERIC1_YN: "F",
+                CM_GENERIC2_YN: "F",
+                CM_GENERIC3_YN: "F",
+                FROM_DT: "",
+                TO_DT: "",
+                CM_CMTS: ""
+              }
+            ]
+          }
+        },
+        STATUS: 0
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\getperson:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    GetPerson: {
+      Params: {
+        PERSON: {
+          V_PARSE_NAME: "HOKULANI ELEMENTARY SCHOOL",
+          O_FEN: "",
+          PIN: "",
+          I_DRIVERS_LIC_NO: "",
+          I_SIN: "",
+          PERSON_NO: 1000017,
+          PRIVATE_YN: "F",
+          PERSON_ID_CUSTOM: 82,
+          PERSON_STAT: "ACT",
+          TITLE_CD: "",
+          PERSON_FNM: "",
+          PERSON_MNM: "",
+          PERSON_LNM: "HOKULANI ELEMENTARY SCHOOL",
+          ADDR_SEQ_DFLT: 1,
+          PHONE_SEQ_DFLT: 1,
+          IN_CARE_OF_OVRD: "",
+          ENVELOPE_MEMO_OVRD: "",
+          BIRTH_INC_DT: "",
+          I_DRIVERS_LIC_PROV: "",
+          I_GENDER: "",
+          O_BUSINESS_TP: "ED",
+          SELECT_CD: "",
+          BANKRUPT_YN: "F",
+          BANKRUPT_EXPIRY_DT: "",
+          PENALTY_DEPOSIT_YN: "F",
+          GENERIC_1: "",
+          GENERIC_2: "",
+          GENERIC_3: "",
+          VOTING_DSCT: "",
+          LOGIN_NM: "",
+          HASH_NM: "Hokulani Elementary School",
+          PERSON_CMTS: "",
+          V_NAME: "",
+          STATUS: 0
+        }
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\getphonerecords:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    GetPhoneRecords: {
+      Params: {
+        STATUS: 0,
+        PHONE_COUNT: 1,
+        PHONE: {
+          PHONE_SEQ: 1,
+          ACTIVE_DT: "19720501",
+          INACTIVE_DT: "",
+          PHONE_CD: "HOME",
+          PHONE_NO: "8087345980",
+          EXTENSION_NO: "",
+          PHONE_CMTS: "",
+          PERSON_PHONE_YN: "T",
+          ACCOUNT: {
+            ACCOUNT_NO: 2095881
+          }
+        }
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\getservicebillcode:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    GetServiceBillCode: {
+      Params: {
+        LOCATION_NO: 3072398,
+        BILL_CODES: {
+          SERVICE_BILL_CODE: [
+            {
+              ACCOUNT_NO: 2029906,
+              LOCATION_NO: 3072398,
+              SERVICE_SEQ: 1,
+              BILL_CD: "2CPR",
+              ACTIVE_DT: 20100503,
+              INACTIVE_DT: "",
+              SBC_MULTIPLIER: 1,
+              BILLABLE_EVENT_YN: "T",
+              VOIDED_YN: "F",
+              BILL_CODE_CMTS: "",
+              BILL_CD_ACTIVE_DT: 20100101,
+              BILL_CD_INACTIVE_DT: "",
+              BILL_CD_FDESC: "Hilo - NU RES 100lb Cyl",
+              BILL_CD_SDESC: "2-R 100lb Cyl",
+              ACTIVE_MTH_START: "",
+              ACTIVE_DAY_START: "",
+              ACTIVE_MTH_END: "",
+              ACTIVE_DAY_END: "",
+              BILL_CD_DISCOUNTABLE_YN: "F",
+              BILL_CD_TAXABLE_YN: "F",
+              BILL_PRINT_CD: "",
+              BASE_RATE_CD: "",
+              CONS_RATE_CD: "",
+              DEM_READ_CALC_TP: "",
+              UNIT_CALC_FACTOR: "",
+              UNIT_CALC_FACTOR_PRF_YN: "F",
+              MIN_CHG: "",
+              MIN_BASE_YN: "F",
+              MIN_CONS_YN: "F",
+              MIN_DEMAND_YN: "F",
+              MIN_FINAL_ONLY_YN: "F",
+              MAX_CHG: "",
+              MAX_BASE_YN: "F",
+              MAX_CONS_YN: "F",
+              MAX_DEMAND_YN: "F",
+              MIN_CHARGE_MODE: "",
+              AR_ITEM_TP: "NHIGASRSNC",
+              AR_CAT_CD: "",
+              AR_SUM_CD: "",
+              AR_MAP_CD: "",
+              CAR_FWD_AR_ITEM_TP: "",
+              CAR_FWD_AR_CAT_CD: "",
+              CAR_FWD_AR_SUM_CD: "",
+              CAR_FWD_AR_MAP_CD: "",
+              STANDARD_DAYS_OVRD: "",
+              FACTOR_CD: "",
+              FINAL_BILL_BASE_YN: "F",
+              CONS_BLOCK_YN: "F",
+              KVAR_READ_CALC_TP: "",
+              MIN_KVAR_YN: "F",
+              MAX_KVAR_YN: "F",
+              BASE_C14_YN: "F",
+              CONS_C14_YN: "F",
+              KVAR_C14_YN: "F",
+              DMND_C14_YN: "F",
+              TOU_CLASS_CD: "",
+              TAX_OVERRIDE_CD: "",
+              BASE_TAXABLE_YN: "F",
+              CONS_TAXABLE_YN: "F",
+              DEM_TAXABLE_YN: "F",
+              KVAR_TAXABLE_YN: "F",
+              BILL_CD_TAX_BUCKET: "",
+              BASE_TAX_BUCKET: "",
+              CONS_TAX_BUCKET: "",
+              DEM_TAX_BUCKET: "",
+              KVAR_TAX_BUCKET: "",
+              REFERENCE_ONLY_YN: "F",
+              WEIGHTED_AVG_YN: "F",
+              RETAIL_CHARGE_YN: "F",
+              PF_ADJUST_YN: "F",
+              BASE_DISC_CAP_YN: "F",
+              CONS_DISC_CAP_YN: "F",
+              DMND_DISC_CAP_YN: "F",
+              KVAR_DISC_CAP_YN: "",
+              BASE_NONZERO_CONS_YN: "F",
+              CONS_CONTEXT: "",
+              DEM_CONTEXT: "",
+              KVAR_CONTEXT: "",
+              LF_CONTEXT: "",
+              PF_CONTEXT: "",
+              HIGH_AMT: "",
+              LOW_AMT: "",
+              RATCHET_CD: "",
+              CONS_REPORT_CONTEXT: "",
+              BASE_REPORT_CONTEXT: "",
+              DEM_REPORT_CONTEXT: "",
+              KVAR_REPORT_CONTEXT: "",
+              MIN_CHG_REPORT_CONTEXT: "",
+              FOR_PREPAY_YN: "F",
+              GENERIC1_YN: "F",
+              GENERIC2_YN: "F",
+              GENERIC3_YN: "F",
+              BILL_CD_CMTS: "",
+              BILL_CODE_CHARGE_MODE: [
+                {
+                  CHARGE_MODE: "C07",
+                  CHARGE_MODE_SEQ: 1,
+                  CHARGE_MODE_TP: "BECHG",
+                  CM_DESC: "Consumption Charge",
+                  CM_FIXED_CHARGE: "",
+                  CM_FIXED_CONS: "",
+                  CM_MIN_CONS: "",
+                  CM_MAX_CONS: "",
+                  CM_FACTOR: "",
+                  CM_FACTOR_PREF_CD: "",
+                  CM_BASE_RATE_CD: "",
+                  CM_CONS_RATE_CD: "",
+                  CM_SERV_TP: "",
+                  CM_BASE_CHARGE_YN: "F",
+                  CM_CONS_CHARGE_YN: "F",
+                  CM_DEMAND_CHARGE_YN: "F",
+                  CM_DISCOUNTABLE_YN: "F",
+                  CM_TAXABLE_YN: "T",
+                  CM_TAX_BUCKET: "",
+                  CM_ONE_TIME_CHG_YN: "F",
+                  CM_PRORATEABLE_YN: "F",
+                  CM_ASSET_TP: "",
+                  CM_BILL_CD: "",
+                  CM_SURCHARGE_TP: "",
+                  VOIDED_YN: "F",
+                  FACTOR_CD: "2CPR",
+                  CM_FINAL_BILL_YN: "T",
+                  CM_DEM_READ_CALC_TP: "",
+                  CM_MIN_CHG_YN: "F",
+                  CM_MAX_CHG_YN: "F",
+                  CM_AR_ITEM_TP: "",
+                  CM_AR_CAT_CD: "",
+                  CM_AR_SUM_CD: "",
+                  CM_AR_MAP_CD: "",
+                  CM_REFUND_ONLY_YN: "F",
+                  CM_EQUATION: "",
+                  CM_C14_CHARGE_YN: "F",
+                  CM_LINK_SEQ: "",
+                  CM_OPERATION_SEQ: "",
+                  CM_ASSET_INSTALLED_YN: "F",
+                  CM_ASSET_ATTRIBUTE: "",
+                  CM_ASSET_VALUE: "",
+                  CM_METER_DISTINCT_YN: "F",
+                  CM_PRIMARY_BASE_YN: "F",
+                  CM_DISC_CAP_YN: "F",
+                  CM_APPLY_CAP_YN: "F",
+                  CM_BC_MIN_CHG_SRC_YN: "F",
+                  CM_CONTEXT: "",
+                  REPORT_CONTEXT: "NUCON",
+                  CM_BASE_RPT_CTXT: "",
+                  CM_CONS_RPT_CTXT: "",
+                  CM_DEM_RPT_CTXT: "",
+                  CM_KVAR_RPT_CTXT: "",
+                  CM_GENERIC1_YN: "F",
+                  CM_GENERIC2_YN: "F",
+                  CM_GENERIC3_YN: "F",
+                  FROM_DT: "",
+                  TO_DT: "",
+                  CM_CMTS: ""
+                }, 
+                {
+                  CHARGE_MODE: "C40",
+                  CHARGE_MODE_SEQ: 1,
+                  CHARGE_MODE_TP: "",
+                  CM_DESC: "Employee Discount",
+                  CM_FIXED_CHARGE: "",
+                  CM_FIXED_CONS: "",
+                  CM_MIN_CONS: "",
+                  CM_MAX_CONS: "",
+                  CM_FACTOR: "",
+                  CM_FACTOR_PREF_CD: "",
+                  CM_BASE_RATE_CD: "",
+                  CM_CONS_RATE_CD: "",
+                  CM_SERV_TP: "",
+                  CM_BASE_CHARGE_YN: "F",
+                  CM_CONS_CHARGE_YN: "F",
+                  CM_DEMAND_CHARGE_YN: "F",
+                  CM_DISCOUNTABLE_YN: "F",
+                  CM_TAXABLE_YN: "T",
+                  CM_TAX_BUCKET: "",
+                  CM_ONE_TIME_CHG_YN: "F",
+                  CM_PRORATEABLE_YN: "F",
+                  CM_ASSET_TP: "",
+                  CM_BILL_CD: "",
+                  CM_SURCHARGE_TP: "",
+                  VOIDED_YN: "F",
+                  FACTOR_CD: "",
+                  CM_FINAL_BILL_YN: "T",
+                  CM_DEM_READ_CALC_TP: "",
+                  CM_MIN_CHG_YN: "F",
+                  CM_MAX_CHG_YN: "F",
+                  CM_AR_ITEM_TP: "",
+                  CM_AR_CAT_CD: "",
+                  CM_AR_SUM_CD: "",
+                  CM_AR_MAP_CD: "",
+                  CM_REFUND_ONLY_YN: "F",
+                  CM_EQUATION: "TEST(IF(acct(EMPLY)=const(T)),TRUE(summt(BECHG)*factor(EMPLY)),FALSE(const(0)))",
+                  CM_C14_CHARGE_YN: "F",
+                  CM_LINK_SEQ: "",
+                  CM_OPERATION_SEQ: "",
+                  CM_ASSET_INSTALLED_YN: "F",
+                  CM_ASSET_ATTRIBUTE: "",
+                  CM_ASSET_VALUE: "",
+                  CM_METER_DISTINCT_YN: "F",
+                  CM_PRIMARY_BASE_YN: "F",
+                  CM_DISC_CAP_YN: "F",
+                  CM_APPLY_CAP_YN: "F",
+                  CM_BC_MIN_CHG_SRC_YN: "F",
+                  CM_CONTEXT: "",
+                  REPORT_CONTEXT: "EMPDS",
+                  CM_BASE_RPT_CTXT: "",
+                  CM_CONS_RPT_CTXT: "",
+                  CM_DEM_RPT_CTXT: "",
+                  CM_KVAR_RPT_CTXT: "",
+                  CM_GENERIC1_YN: "F",
+                  CM_GENERIC2_YN: "F",
+                  CM_GENERIC3_YN: "F",
+                  FROM_DT: "",
+                  TO_DT: "",
+                  CM_CMTS: ""
+                }
+              ]
+            }, 
+            {
+              ACCOUNT_NO: 2029906,
+              LOCATION_NO: 3072398,
+              SERVICE_SEQ: 1,
+              BILL_CD: "ERT",
+              ACTIVE_DT: 20100503,
+              INACTIVE_DT: "",
+              SBC_MULTIPLIER: 1,
+              BILLABLE_EVENT_YN: "T",
+              VOIDED_YN: "F",
+              BILL_CODE_CMTS: "",
+              BILL_CD_ACTIVE_DT: 20100101,
+              BILL_CD_INACTIVE_DT: "",
+              BILL_CD_FDESC: "NU Environment Response Tax",
+              BILL_CD_SDESC: "NU-ERT",
+              ACTIVE_MTH_START: "",
+              ACTIVE_DAY_START: "",
+              ACTIVE_MTH_END: "",
+              ACTIVE_DAY_END: "",
+              BILL_CD_DISCOUNTABLE_YN: "F",
+              BILL_CD_TAXABLE_YN: "F",
+              BILL_PRINT_CD: "",
+              BASE_RATE_CD: "",
+              CONS_RATE_CD: "",
+              DEM_READ_CALC_TP: "",
+              UNIT_CALC_FACTOR: "",
+              UNIT_CALC_FACTOR_PRF_YN: "F",
+              MIN_CHG: "",
+              MIN_BASE_YN: "F",
+              MIN_CONS_YN: "F",
+              MIN_DEMAND_YN: "F",
+              MIN_FINAL_ONLY_YN: "F",
+              MAX_CHG: "",
+              MAX_BASE_YN: "F",
+              MAX_CONS_YN: "F",
+              MAX_DEMAND_YN: "F",
+              MIN_CHARGE_MODE: "",
+              AR_ITEM_TP: "",
+              AR_CAT_CD: "",
+              AR_SUM_CD: "",
+              AR_MAP_CD: "STENV",
+              CAR_FWD_AR_ITEM_TP: "",
+              CAR_FWD_AR_CAT_CD: "",
+              CAR_FWD_AR_SUM_CD: "",
+              CAR_FWD_AR_MAP_CD: "",
+              STANDARD_DAYS_OVRD: "",
+              FACTOR_CD: "",
+              FINAL_BILL_BASE_YN: "T",
+              CONS_BLOCK_YN: "F",
+              KVAR_READ_CALC_TP: "",
+              MIN_KVAR_YN: "F",
+              MAX_KVAR_YN: "F",
+              BASE_C14_YN: "F",
+              CONS_C14_YN: "F",
+              KVAR_C14_YN: "F",
+              DMND_C14_YN: "F",
+              TOU_CLASS_CD: "",
+              TAX_OVERRIDE_CD: "",
+              BASE_TAXABLE_YN: "F",
+              CONS_TAXABLE_YN: "F",
+              DEM_TAXABLE_YN: "F",
+              KVAR_TAXABLE_YN: "F",
+              BILL_CD_TAX_BUCKET: "",
+              BASE_TAX_BUCKET: "",
+              CONS_TAX_BUCKET: "",
+              DEM_TAX_BUCKET: "",
+              KVAR_TAX_BUCKET: "",
+              REFERENCE_ONLY_YN: "F",
+              WEIGHTED_AVG_YN: "F",
+              RETAIL_CHARGE_YN: "F",
+              PF_ADJUST_YN: "F",
+              BASE_DISC_CAP_YN: "F",
+              CONS_DISC_CAP_YN: "F",
+              DMND_DISC_CAP_YN: "F",
+              KVAR_DISC_CAP_YN: "",
+              BASE_NONZERO_CONS_YN: "F",
+              CONS_CONTEXT: "",
+              DEM_CONTEXT: "",
+              KVAR_CONTEXT: "",
+              LF_CONTEXT: "",
+              PF_CONTEXT: "",
+              HIGH_AMT: "",
+              LOW_AMT: "",
+              RATCHET_CD: "",
+              CONS_REPORT_CONTEXT: "",
+              BASE_REPORT_CONTEXT: "",
+              DEM_REPORT_CONTEXT: "",
+              KVAR_REPORT_CONTEXT: "",
+              MIN_CHG_REPORT_CONTEXT: "",
+              FOR_PREPAY_YN: "F",
+              GENERIC1_YN: "F",
+              GENERIC2_YN: "F",
+              GENERIC3_YN: "F",
+              BILL_CD_CMTS: "",
+              BILL_CODE_CHARGE_MODE: [
+                {
+                  CHARGE_MODE: "C07",
+                  CHARGE_MODE_SEQ: 1,
+                  CHARGE_MODE_TP: "",
+                  CM_DESC: "Environment Response Tax",
+                  CM_FIXED_CHARGE: "",
+                  CM_FIXED_CONS: "",
+                  CM_MIN_CONS: "",
+                  CM_MAX_CONS: "",
+                  CM_FACTOR: "",
+                  CM_FACTOR_PREF_CD: "",
+                  CM_BASE_RATE_CD: "",
+                  CM_CONS_RATE_CD: "",
+                  CM_SERV_TP: "",
+                  CM_BASE_CHARGE_YN: "F",
+                  CM_CONS_CHARGE_YN: "F",
+                  CM_DEMAND_CHARGE_YN: "F",
+                  CM_DISCOUNTABLE_YN: "F",
+                  CM_TAXABLE_YN: "F",
+                  CM_TAX_BUCKET: "",
+                  CM_ONE_TIME_CHG_YN: "F",
+                  CM_PRORATEABLE_YN: "F",
+                  CM_ASSET_TP: "",
+                  CM_BILL_CD: "",
+                  CM_SURCHARGE_TP: "",
+                  VOIDED_YN: "F",
+                  FACTOR_CD: "NUERT",
+                  CM_FINAL_BILL_YN: "T",
+                  CM_DEM_READ_CALC_TP: "",
+                  CM_MIN_CHG_YN: "F",
+                  CM_MAX_CHG_YN: "F",
+                  CM_AR_ITEM_TP: "",
+                  CM_AR_CAT_CD: "",
+                  CM_AR_SUM_CD: "",
+                  CM_AR_MAP_CD: "",
+                  CM_REFUND_ONLY_YN: "F",
+                  CM_EQUATION: "",
+                  CM_C14_CHARGE_YN: "F",
+                  CM_LINK_SEQ: "",
+                  CM_OPERATION_SEQ: "",
+                  CM_ASSET_INSTALLED_YN: "F",
+                  CM_ASSET_ATTRIBUTE: "",
+                  CM_ASSET_VALUE: "",
+                  CM_METER_DISTINCT_YN: "F",
+                  CM_PRIMARY_BASE_YN: "F",
+                  CM_DISC_CAP_YN: "F",
+                  CM_APPLY_CAP_YN: "F",
+                  CM_BC_MIN_CHG_SRC_YN: "F",
+                  CM_CONTEXT: "",
+                  REPORT_CONTEXT: "NUERT",
+                  CM_BASE_RPT_CTXT: "",
+                  CM_CONS_RPT_CTXT: "",
+                  CM_DEM_RPT_CTXT: "",
+                  CM_KVAR_RPT_CTXT: "",
+                  CM_GENERIC1_YN: "F",
+                  CM_GENERIC2_YN: "F",
+                  CM_GENERIC3_YN: "F",
+                  FROM_DT: "",
+                  TO_DT: "",
+                  CM_CMTS: ""
+                }
+              ]
+            }, 
+            {
+              ACCOUNT_NO: 2029906,
+              LOCATION_NO: 3072398,
+              SERVICE_SEQ: 1,
+              BILL_CD: "MCYLN",
+              ACTIVE_DT: 20100503,
+              INACTIVE_DT: "",
+              SBC_MULTIPLIER: 1,
+              BILLABLE_EVENT_YN: "F",
+              VOIDED_YN: "F",
+              BILL_CODE_CMTS: "",
+              BILL_CD_ACTIVE_DT: 20100101,
+              BILL_CD_INACTIVE_DT: "",
+              BILL_CD_FDESC: "Monthly Cylinder Customer Chg",
+              BILL_CD_SDESC: "Mnthly Cyl Chg",
+              ACTIVE_MTH_START: "",
+              ACTIVE_DAY_START: "",
+              ACTIVE_MTH_END: "",
+              ACTIVE_DAY_END: "",
+              BILL_CD_DISCOUNTABLE_YN: "F",
+              BILL_CD_TAXABLE_YN: "F",
+              BILL_PRINT_CD: "",
+              BASE_RATE_CD: "",
+              CONS_RATE_CD: "",
+              DEM_READ_CALC_TP: "",
+              UNIT_CALC_FACTOR: "",
+              UNIT_CALC_FACTOR_PRF_YN: "F",
+              MIN_CHG: "",
+              MIN_BASE_YN: "F",
+              MIN_CONS_YN: "F",
+              MIN_DEMAND_YN: "F",
+              MIN_FINAL_ONLY_YN: "F",
+              MAX_CHG: "",
+              MAX_BASE_YN: "F",
+              MAX_CONS_YN: "F",
+              MAX_DEMAND_YN: "F",
+              MIN_CHARGE_MODE: "",
+              AR_ITEM_TP: "",
+              AR_CAT_CD: "",
+              AR_SUM_CD: "",
+              AR_MAP_CD: "NUMCC",
+              CAR_FWD_AR_ITEM_TP: "",
+              CAR_FWD_AR_CAT_CD: "",
+              CAR_FWD_AR_SUM_CD: "",
+              CAR_FWD_AR_MAP_CD: "",
+              STANDARD_DAYS_OVRD: "",
+              FACTOR_CD: "",
+              FINAL_BILL_BASE_YN: "F",
+              CONS_BLOCK_YN: "F",
+              KVAR_READ_CALC_TP: "",
+              MIN_KVAR_YN: "F",
+              MAX_KVAR_YN: "F",
+              BASE_C14_YN: "F",
+              CONS_C14_YN: "F",
+              KVAR_C14_YN: "F",
+              DMND_C14_YN: "F",
+              TOU_CLASS_CD: "",
+              TAX_OVERRIDE_CD: "",
+              BASE_TAXABLE_YN: "F",
+              CONS_TAXABLE_YN: "F",
+              DEM_TAXABLE_YN: "F",
+              KVAR_TAXABLE_YN: "F",
+              BILL_CD_TAX_BUCKET: "",
+              BASE_TAX_BUCKET: "",
+              CONS_TAX_BUCKET: "",
+              DEM_TAX_BUCKET: "",
+              KVAR_TAX_BUCKET: "",
+              REFERENCE_ONLY_YN: "F",
+              WEIGHTED_AVG_YN: "F",
+              RETAIL_CHARGE_YN: "F",
+              PF_ADJUST_YN: "F",
+              BASE_DISC_CAP_YN: "F",
+              CONS_DISC_CAP_YN: "F",
+              DMND_DISC_CAP_YN: "F",
+              KVAR_DISC_CAP_YN: "",
+              BASE_NONZERO_CONS_YN: "F",
+              CONS_CONTEXT: "",
+              DEM_CONTEXT: "",
+              KVAR_CONTEXT: "",
+              LF_CONTEXT: "",
+              PF_CONTEXT: "",
+              HIGH_AMT: "",
+              LOW_AMT: "",
+              RATCHET_CD: "",
+              CONS_REPORT_CONTEXT: "",
+              BASE_REPORT_CONTEXT: "",
+              DEM_REPORT_CONTEXT: "",
+              KVAR_REPORT_CONTEXT: "",
+              MIN_CHG_REPORT_CONTEXT: "",
+              FOR_PREPAY_YN: "F",
+              GENERIC1_YN: "F",
+              GENERIC2_YN: "F",
+              GENERIC3_YN: "F",
+              BILL_CD_CMTS: "",
+              BILL_CODE_CHARGE_MODE: [
+                {
+                  CHARGE_MODE: "C11",
+                  CHARGE_MODE_SEQ: 1,
+                  CHARGE_MODE_TP: "NUMCC",
+                  CM_DESC: "Monthly Customer Chg",
+                  CM_FIXED_CHARGE: "",
+                  CM_FIXED_CONS: "",
+                  CM_MIN_CONS: "",
+                  CM_MAX_CONS: "",
+                  CM_FACTOR: "",
+                  CM_FACTOR_PREF_CD: "",
+                  CM_BASE_RATE_CD: "MCYLN",
+                  CM_CONS_RATE_CD: "",
+                  CM_SERV_TP: "",
+                  CM_BASE_CHARGE_YN: "F",
+                  CM_CONS_CHARGE_YN: "F",
+                  CM_DEMAND_CHARGE_YN: "F",
+                  CM_DISCOUNTABLE_YN: "F",
+                  CM_TAXABLE_YN: "T",
+                  CM_TAX_BUCKET: "",
+                  CM_ONE_TIME_CHG_YN: "F",
+                  CM_PRORATEABLE_YN: "T",
+                  CM_ASSET_TP: "CYLDR",
+                  CM_BILL_CD: "",
+                  CM_SURCHARGE_TP: "",
+                  VOIDED_YN: "F",
+                  FACTOR_CD: "",
+                  CM_FINAL_BILL_YN: "T",
+                  CM_DEM_READ_CALC_TP: "",
+                  CM_MIN_CHG_YN: "F",
+                  CM_MAX_CHG_YN: "F",
+                  CM_AR_ITEM_TP: "",
+                  CM_AR_CAT_CD: "",
+                  CM_AR_SUM_CD: "",
+                  CM_AR_MAP_CD: "",
+                  CM_REFUND_ONLY_YN: "F",
+                  CM_EQUATION: "",
+                  CM_C14_CHARGE_YN: "F",
+                  CM_LINK_SEQ: "",
+                  CM_OPERATION_SEQ: "10",
+                  CM_ASSET_INSTALLED_YN: "F",
+                  CM_ASSET_ATTRIBUTE: "",
+                  CM_ASSET_VALUE: "",
+                  CM_METER_DISTINCT_YN: "F",
+                  CM_PRIMARY_BASE_YN: "F",
+                  CM_DISC_CAP_YN: "F",
+                  CM_APPLY_CAP_YN: "F",
+                  CM_BC_MIN_CHG_SRC_YN: "F",
+                  CM_CONTEXT: "",
+                  REPORT_CONTEXT: "NUBAS",
+                  CM_BASE_RPT_CTXT: "",
+                  CM_CONS_RPT_CTXT: "",
+                  CM_DEM_RPT_CTXT: "",
+                  CM_KVAR_RPT_CTXT: "",
+                  CM_GENERIC1_YN: "F",
+                  CM_GENERIC2_YN: "F",
+                  CM_GENERIC3_YN: "F",
+                  FROM_DT: "",
+                  TO_DT: "",
+                  CM_CMTS: ""
+                }, 
+                {
+                  CHARGE_MODE: "C40",
+                  CHARGE_MODE_SEQ: 1,
+                  CHARGE_MODE_TP: "",
+                  CM_DESC: "Employee Discount",
+                  CM_FIXED_CHARGE: "",
+                  CM_FIXED_CONS: "",
+                  CM_MIN_CONS: "",
+                  CM_MAX_CONS: "",
+                  CM_FACTOR: "",
+                  CM_FACTOR_PREF_CD: "",
+                  CM_BASE_RATE_CD: "",
+                  CM_CONS_RATE_CD: "",
+                  CM_SERV_TP: "",
+                  CM_BASE_CHARGE_YN: "F",
+                  CM_CONS_CHARGE_YN: "F",
+                  CM_DEMAND_CHARGE_YN: "F",
+                  CM_DISCOUNTABLE_YN: "F",
+                  CM_TAXABLE_YN: "T",
+                  CM_TAX_BUCKET: "",
+                  CM_ONE_TIME_CHG_YN: "F",
+                  CM_PRORATEABLE_YN: "F",
+                  CM_ASSET_TP: "",
+                  CM_BILL_CD: "",
+                  CM_SURCHARGE_TP: "",
+                  VOIDED_YN: "F",
+                  FACTOR_CD: "",
+                  CM_FINAL_BILL_YN: "T",
+                  CM_DEM_READ_CALC_TP: "",
+                  CM_MIN_CHG_YN: "F",
+                  CM_MAX_CHG_YN: "F",
+                  CM_AR_ITEM_TP: "",
+                  CM_AR_CAT_CD: "",
+                  CM_AR_SUM_CD: "",
+                  CM_AR_MAP_CD: "",
+                  CM_REFUND_ONLY_YN: "F",
+                  CM_EQUATION: "TEST(IF(acct(EMPLY)=const(T)),TRUE(summt(NUMCC)*factor(EMPLY)),FALSE(const(0)))",
+                  CM_C14_CHARGE_YN: "F",
+                  CM_LINK_SEQ: "",
+                  CM_OPERATION_SEQ: "20",
+                  CM_ASSET_INSTALLED_YN: "F",
+                  CM_ASSET_ATTRIBUTE: "",
+                  CM_ASSET_VALUE: "",
+                  CM_METER_DISTINCT_YN: "F",
+                  CM_PRIMARY_BASE_YN: "F",
+                  CM_DISC_CAP_YN: "F",
+                  CM_APPLY_CAP_YN: "F",
+                  CM_BC_MIN_CHG_SRC_YN: "F",
+                  CM_CONTEXT: "",
+                  REPORT_CONTEXT: "EMPDS",
+                  CM_BASE_RPT_CTXT: "",
+                  CM_CONS_RPT_CTXT: "",
+                  CM_DEM_RPT_CTXT: "",
+                  CM_KVAR_RPT_CTXT: "",
+                  CM_GENERIC1_YN: "F",
+                  CM_GENERIC2_YN: "F",
+                  CM_GENERIC3_YN: "F",
+                  FROM_DT: "",
+                  TO_DT: "",
+                  CM_CMTS: ""
+                }
+              ]
+            }
+          ]
+        },
+        STATUS: 0
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\getserviceorder:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    GetServiceOrder: {
+      Params: {
+        STATUS: 0,
+        ACTION_NO: 253,
+        ACTION_CD: "MTSRD",
+        ASSIGN_STATUS: "CLOSE",
+        CREW_ID: "OAT08",
+        ACTION_STAT: "CLOSE",
+        ACCOUNT_NO: 2081585,
+        LOCATION_NO: 3029267,
+        LOCATION_CLASS: "RES",
+        PERSON_NO: 1106280,
+        PHONE_NO: "(808) 743-2380",
+        V_NAME: "IKENA K ANAKALEA",
+        ACTION_FDESC: "Meter Start Read",
+        ACTION_INSTRUCT: "",
+        ACTION_CMTS: "per dispatch okay to schedule 10/20/22.\nUnlock/get reading, leak/pressure test, range, heater, quoted \$30 connect/dry, meter accessible, will be home.",
+        EFFECTIVE_DT: 20221017,
+        CLOSE_DTM: 20221020114535,
+        PRIORITY_OVRD: 2,
+        ACTION_SEQ: "",
+        ACTION_TP: "SO",
+        ASSET_RESTRICTED_YN: "F",
+        ASSET_TP: "METER",
+        DOCUMENT_NM: "",
+        FOREIGN_ID: "",
+        GEO_AREA_CD: "OAHU",
+        OVERDUE_AMT: "",
+        REQUEST_NO: 233,
+        REQUEST_TP: "MOVIN",
+        SERVICE_TP: "UGASM",
+        SOURCE_CD: "CONCT",
+        SOURCE_ID: 103,
+        SUBSYSTEM_CD: "UM",
+        SUSP_COLL_YN_OVRD: "F",
+        DISPATCHER_ID: "DCRI - David Criste",
+        DISPATCH_DTM: 20221020085953,
+        DISPATCH_CMTS: "DCRI 20221020 09:00:07\nDCRI 20221020 08:58:34\nTBIG 20221018 17:26:31\nDispatched Action No 877 to Crew ID OAT06 \nTBIG 20221018 17:26:31\nDispatched Action No 877 to Crew ID OAT06 \nDCRI 20221020 08:58:34\nTBIG 20221018 17:26:31\nDispatched Action No 877 to Crew ID OAT06 \nRQUI 20221018 13:18:34\nDispatched Action No 253 to Crew ID OAT06",
+        PRINT_Q_OVRD: "",
+        REQUESTOR_NO: "",
+        REQUESTOR_ADDR: "",
+        REQUESTOR_EMAIL: "",
+        REQUESTOR_PHONE: "",
+        REQUESTOR_FNM: "",
+        REQUESTOR_LNM: "",
+        DISTRIBUTION_OVRD: "",
+        OLD_DISTRIBUTION_CD: "",
+        REDISTRIBUTED_BY: "",
+        RESOLUTION_DT: 20221020,
+        RESOLUTION_TM: "",
+        RESOLUTION_CD: "CMPLT",
+        RESOLVED_BY: "RKIM",
+        RESOURCE_TP: "",
+        RESOURCE_ID: "",
+        SCHEDULED_DT: 20221020,
+        SCHEDULED_TM: "",
+        ADD_BY: "DVEN",
+        ADD_DTM: 20221017160130,
+        TRANSACTION_NO: 320,
+        GEOLAT: 21.387845008,
+        GEOLONG: -158.147089033,
+        V_SADDRESS: "87182 HELELUA ST",
+        CITY: "WAIANAE",
+        METERS: {
+          METER: [
+            {
+              METER_TP: "G_5_10",
+              SERIAL_NO: 144947,
+              MULTIPLIER: 1.016961,
+              METER_STAT: "OFF",
+              METER_NEW_STAT: "ON",
+              SERVICE_SEQ: 1,
+              SERVICE_TP: "UGASM",
+              METER_SEQ: 1,
+              METER_NO: 144103,
+              LOCATION_NO: 3029267,
+              ACTION_METER_SEQ: 1,
+              EXT_ASSET_NO: "",
+              LINE_PRESSURE_SIZE: "W110",
+              SITUAT_CD: "",
+              SUBSIT_CD: "",
+              CYCLE_CD: 18,
+              ROUTE_NO: 113302,
+              ROUTE_SEQ: 910,
+              MTR_CHG_TP: "",
+              CT_NUMER: "",
+              CT_DENOM: "",
+              PT_NUMER: "",
+              PT_DENOM: "",
+              AREA_SERVED: "01-FRONT",
+              METER_LOCATION_ALERT: 1,
+              FULL_SCALE_DEM_DIAL: "",
+              INST_LOC_1: "",
+              INST_LOC_2: "",
+              INST_LOC_3: 4,
+              COMMENTS: "",
+              CONNECTION_NO: 23336,
+              CONN_NO_SEQ: 1,
+              CONN_LOC_DESC: "",
+              LINKED_METER_YN: "F",
+              READ_ENTRY_CD: "",
+              READ_TP: "CUTON",
+              READ_DT: 20221020,
+              READ_TM: 111800,
+              REGISTERS: {
+                REGISTER: [
+                  {
+                    REGISTER_NO: 1,
+                    READ_TP: "CUTON",
+                    READ_AMT: 1707,
+                    REGISTER_TP: "M",
+                    DIALS_READ_OVRD: 99999,
+                    DETAIL_SEQ: 1,
+                    SEAL_NO: "",
+                    REG_BEHAV: "ACCUM",
+                    MULTIPLIER: 10,
+                    PERIOD_OF_DAY_CD: "",
+                    REG_ON_YN: "T",
+                    REG_ONOFF_DT: 20160830,
+                    PREV_BILL_DT: 20230131,
+                    PREV_EXCEPTION_CD: "",
+                    PREV_READ_AMT: 1899,
+                    PREV_READ_DT: 20230130,
+                    PREV_READ_TM: 72847,
+                    PREV_READ_TP: "RR",
+                    PREV_READ_ENTRY_CD: "HH",
+                    PREV_SEAL_NO: "",
+                    REG_CHG_TP: "",
+                    DEVICE_NO: 39597,
+                    DEVICE_SERIAL_NO: 50909291,
+                    DEVICE_TP: "REG",
+                    READER_EXCEPTION_CD: "",
+                    READER_CMTS: ""
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        DEVICES: {
+          DEVICE: [
+            {
+              DEV_CHG_TP: "",
+              REGISTER_NO: 1,
+              SERIAL_NO: 144947,
+              METER_NO: 144103,
+              METER_SERIAL_NO: 144947,
+              DEVICE_NO: 39597,
+              DEVICE_SERIAL_NO: 50909291
+            }, 
+            {
+              DEV_CHG_TP: "",
+              REGISTER_NO: 1,
+              SERIAL_NO: 144947,
+              METER_NO: 144103,
+              METER_SERIAL_NO: 144947,
+              DEVICE_NO: 39597,
+              DEVICE_SERIAL_NO: 50909291
+            }
+          ]
+        },
+        HOLDINGS: {
+          HOLDING: [
+            {
+              ACTION_ASSET_SEQ: 1,
+              LOCATION_NO: 3029267,
+              SERVICE_SEQ: 1,
+              ASSET_TP: "METER",
+              CONFIG_CD: "",
+              COUNT: ""
+            }, 
+            {
+              ACTION_ASSET_SEQ: 1,
+              LOCATION_NO: 3029267,
+              SERVICE_SEQ: 1,
+              ASSET_TP: "METER",
+              CONFIG_CD: "",
+              COUNT: ""
+            }
+          ]
+        },
+        SERVICE_LOCATIONS: {
+          SERVICE_LOCATION: [
+            {
+              LOCATION_NO: 3029267,
+              SERVICE_SEQ: 1,
+              SERVICE_TP: "UGASM"
+            }, 
+            {
+              LOCATION_NO: 3029267,
+              SERVICE_SEQ: 1,
+              SERVICE_TP: "UGASM"
+            }
+          ]
+        },
+        COMMENTS: {
+          COMMENT: [
+            {
+              TRANSACTION_NO: 0,
+              ADD_BY: "RQUI",
+              ADD_DTM: 20221018131834,
+              CREW_ID: "OAT06",
+              ASSIGN_STATUS: "DPTCH",
+              COMMENT_CD: "UMSO",
+              SEQ: 1,
+              CHANGE_CMTS: "Dispatched Action No 253 to Crew ID OAT06"
+            }, 
+            {
+              TRANSACTION_NO: 320,
+              ADD_BY: "DCRI",
+              ADD_DTM: 20221020085834,
+              CREW_ID: "OAT06",
+              ASSIGN_STATUS: "DPTCH",
+              COMMENT_CD: "UMSO",
+              SEQ: 1,
+              CHANGE_CMTS: "TBIG 20221018 17:26:31\nDispatched Action No 877 to Crew ID OAT06"
+            }
+          ]
+        },
+        RESOLUTIONS: {
+          RESOLUTION: [
+            {
+              RESOLUTION_CD: "CMPLT",
+              RESOLUTION_SDESC: "Complete",
+              RESOLUTION_FDESC: "Complete"
+            }, 
+            {
+              RESOLUTION_CD: "CMPLT",
+              RESOLUTION_SDESC: "Complete",
+              RESOLUTION_FDESC: "Complete"
+            }, 
+            {
+              RESOLUTION_CD: "CMPLT",
+              RESOLUTION_SDESC: "Complete",
+              RESOLUTION_FDESC: "Complete"
+            }
+          ]
+        }
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\setaccount:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    SetAccount: {
+      Params: {
+        STATUS: "0",
+        STATUS_DESC: "Account information successfully updated."
+      },
+      STATUS: "0"
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\setlocation:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    SetAccountBillingAddress: {
+      Params: {
+        STATUS: 230,
+        STATUS_DESC: "created"
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\setaccountbillingaddress:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    SetAccountBillingAddress: {
+      Params: {
+        STATUS: 230,
+        STATUS_DESC: "created"
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\setaccountphone:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    SetAccountBillingAddress: {
+      Params: {
+        STATUS: 230,
+        STATUS_DESC: "created"
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\setassetextendedattributes:application\json:cayenta-sys-api-config">
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  Reply: {
+    SetAssetExtendedAttributes: {
+      Params: {
+        STATUS: 230,
+        STATUS_DESC: "Extended Attributes Asset created!"
+      },
+      STATUS: 0
+    }
+  }
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>
